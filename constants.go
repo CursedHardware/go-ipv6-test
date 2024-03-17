@@ -8,7 +8,6 @@ var tasks = []string{
 	"a", "aaaa",
 	"ds", "dsmtu",
 	"v6mtu", "v6ns",
-	"asn4", "asn6",
 }
 
 var nameMap = map[string]string{

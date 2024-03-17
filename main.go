@@ -39,25 +39,31 @@ func init() {
 }
 
 func main() {
-	if testAll {
+	switch {
+	case testAll:
 		for _, testHost := range getAllHosts() {
 			fmt.Printf("Test for %q\n", testHost)
 			run(testHost, "aaaa")
 		}
-	}
-	if listAll {
+	case listAll:
 		fmt.Println(strings.Join(getAllHosts(), "\n"))
 		return
+	default:
+		for _, taskName := range tasks {
+			run(host, taskName)
+		}
 	}
-	for _, taskName := range tasks {
-		run(host, taskName)
-	}
+	runWithHost("ipv4.lookup.test-ipv6.com", "test-ipv6.com", "asn4")
+	runWithHost("ipv6.lookup.test-ipv6.com", "test-ipv6.com", "asn4")
 }
 
 func run(testHost, taskName string) {
-	record := tests[testHost]
+	runWithHost(tests[testHost][taskName], testHost, taskName)
+}
+
+func runWithHost(host, testHost, taskName string) {
 	start := time.Now()
-	report, err := do(taskName, record[taskName], testHost, http.DefaultClient)
+	report, err := do(taskName, host, testHost, http.DefaultClient)
 	elapsed := time.Since(start)
 	fmt.Println(nameMap[taskName])
 	if err != nil {
