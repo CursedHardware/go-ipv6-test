@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
-	"github.com/CursedHardware/go-ipv6-test/ipv6test"
+	. "github.com/CursedHardware/go-ipv6-test/ipv6test"
 	"github.com/fatih/color"
 	"net/http"
 	"strings"
@@ -23,7 +23,7 @@ func init() {
 }
 
 func main() {
-	tester := &ipv6test.Tester{
+	tester := &Tester{
 		Client: http.DefaultClient,
 		MTU:    1600,
 	}
@@ -31,35 +31,63 @@ func main() {
 	case listAll:
 		fmt.Println(strings.Join(knownHosts, "\n"))
 	case testAll:
-		var wg sync.WaitGroup
-		var mux sync.Mutex
-		for _, knownHost := range knownHosts {
-			wg.Add(1)
-			go func(host string) {
-				report := tester.Run(ipv6test.RecordIPv6, host)
-				mux.Lock()
-				fmt.Printf("Test for %q\n", host)
-				emitReport(report)
-				mux.Unlock()
-				wg.Done()
-			}(knownHost)
-		}
-		wg.Wait()
+		batchTasks(tester, []Task{RecordIPv6}, knownHosts)
 	default:
-		for _, taskType := range tasks {
-			emitReport(tester.Run(taskType, host))
-		}
-		emitReport(tester.Run(ipv6test.RecordASN4, "ipv4.lookup.test-ipv6.com"))
-		emitReport(tester.Run(ipv6test.RecordASN6, "ipv6.lookup.test-ipv6.com"))
+		fullTask(tester, host)
 	}
 }
 
-func emitReport(r *ipv6test.Report) {
+func invoke(tester *Tester, requests map[string][]Task) <-chan *Report {
+	var wg sync.WaitGroup
+	reports := make(chan *Report)
+	for taskHost, tasks := range requests {
+		wg.Add(len(tasks))
+		for _, task := range tasks {
+			go func(task Task, taskHost string) {
+				if task == RecordASN4 || task == RecordASN6 {
+					taskHost = "lookup.test-ipv6.com"
+				}
+				reports <- tester.Run(task, taskHost)
+				wg.Done()
+			}(task, taskHost)
+		}
+	}
+	go func() {
+		wg.Wait()
+		close(reports)
+	}()
+	return reports
+}
+
+func fullTask(tester *Tester, host string) {
+	requests := make(map[string][]Task)
+	requests[host] = []Task{
+		RecordIPv4, RecordIPv6, RecordDualStack, RecordDualStackMTU,
+		RecordIPv6MTU, RecordIPv6NS, RecordASN4, RecordASN6,
+	}
+	for report := range invoke(tester, requests) {
+		emitReport(report)
+	}
+}
+
+func batchTasks(tester *Tester, tasks []Task, hosts []string) {
+	requests := make(map[string][]Task)
+	for _, testHost := range hosts {
+		requests[testHost] = tasks
+	}
+	for report := range invoke(tester, requests) {
+		fmt.Printf("Test for %q\n", report.Host)
+		emitReport(report)
+	}
+}
+
+func emitReport(r *Report) {
 	var ok = color.GreenString("ok")
 	var bad = color.BlueString("bad")
 	fmt.Println(r.Task.Name())
 	if r.Failed {
 		fmt.Printf("%s (%s)\n", bad, r.Elapsed)
+		fmt.Println()
 		return
 	}
 	status := bad

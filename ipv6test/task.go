@@ -37,9 +37,9 @@ func (t Task) Name() string {
 
 func (t Task) Prefix() string {
 	switch t {
-	case RecordIPv4:
+	case RecordIPv4, RecordASN4:
 		return "ipv4."
-	case RecordIPv6:
+	case RecordIPv6, RecordASN6:
 		return "ipv6."
 	case RecordDualStack, RecordDualStackMTU:
 		return "ds."
@@ -47,9 +47,8 @@ func (t Task) Prefix() string {
 		return "mtu1280."
 	case RecordIPv6NS:
 		return "ds.v6ns."
-	default:
-		return ""
 	}
+	return ""
 }
 
 func (t Task) Match(proto string) bool {
@@ -58,7 +57,6 @@ func (t Task) Match(proto string) bool {
 		return t >= RecordIPv4 && t <= RecordASN4
 	case "ipv6":
 		return t >= RecordIPv6 && t <= RecordASN6
-	default:
-		return false
 	}
+	return false
 }

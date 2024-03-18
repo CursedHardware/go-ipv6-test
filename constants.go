@@ -1,7 +1,5 @@
 package main
 
-import "github.com/CursedHardware/go-ipv6-test/ipv6test"
-
 var knownHosts = []string{
 	"jp2.test-ipv6.com",
 	"ams2.test-ipv6.com",
@@ -33,13 +31,4 @@ var knownHosts = []string{
 	"test-ipv6.vzxy.net",
 	"testipv6.cn",
 	"testipv6.de",
-}
-
-var tasks = []ipv6test.Task{
-	ipv6test.RecordIPv4,
-	ipv6test.RecordIPv6,
-	ipv6test.RecordDualStack,
-	ipv6test.RecordDualStackMTU,
-	ipv6test.RecordIPv6MTU,
-	ipv6test.RecordIPv6NS,
 }
