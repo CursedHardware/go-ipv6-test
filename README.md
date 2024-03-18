@@ -6,11 +6,11 @@
 $ ./go-ipv6-test -h
 Usage of ./go-ipv6-test:
   -all
-    	Test All Sites
+    	Test All Hosts
   -host string
-    	Host (default "test-ipv6.com")
-  -sites
-    	Available Sites
+    	Host (default "jp2.test-ipv6.com")
+  -hosts
+    	Available Hosts
 ```
 
 ## Build
