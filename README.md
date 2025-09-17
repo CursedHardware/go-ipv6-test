@@ -5,12 +5,10 @@
 ```console
 $ ./go-ipv6-test -h
 Usage of ./go-ipv6-test:
-  -all
-    	Test All Hosts
   -host string
-    	Host (default "jp2.test-ipv6.com")
-  -hosts
-    	Available Hosts
+    	Host (default "main.test-ipv6.com")
+  -mirrors
+    	List of all mirror sites
 ```
 
 ## Build

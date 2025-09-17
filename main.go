@@ -4,21 +4,20 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"log"
+	"net/http"
+	"sync"
+
 	. "github.com/CursedHardware/go-ipv6-test/ipv6test"
 	"github.com/fatih/color"
-	"net/http"
-	"strings"
-	"sync"
 )
 
 var host string
-var listAll bool
-var testAll bool
+var mirrors bool
 
 func init() {
-	flag.StringVar(&host, "host", knownHosts[0], "Host")
-	flag.BoolVar(&testAll, "all", false, "Test All Hosts")
-	flag.BoolVar(&listAll, "hosts", false, "Available Hosts")
+	flag.StringVar(&host, "host", "main.test-ipv6.com", "Host")
+	flag.BoolVar(&mirrors, "mirrors", false, "List of all mirror sites")
 	flag.Parse()
 }
 
@@ -28,10 +27,18 @@ func main() {
 		MTU:    1600,
 	}
 	switch {
-	case listAll:
-		fmt.Println(strings.Join(knownHosts, "\n"))
-	case testAll:
-		batchTasks(tester, []Task{RecordIPv6}, knownHosts)
+	case mirrors:
+		sites, err := tester.GetKnownSites()
+		if err != nil {
+			log.Panicln(err)
+			return
+		}
+		for _, site := range sites {
+			if site.Hidden || !site.Mirror {
+				continue
+			}
+			fmt.Println(site.FQDN)
+		}
 	default:
 		fullTask(tester, host)
 	}
@@ -66,17 +73,6 @@ func fullTask(tester *Tester, host string) {
 		RecordIPv6MTU, RecordIPv6NS, RecordASN4, RecordASN6,
 	}
 	for report := range invoke(tester, requests) {
-		emitReport(report)
-	}
-}
-
-func batchTasks(tester *Tester, tasks []Task, hosts []string) {
-	requests := make(map[string][]Task)
-	for _, testHost := range hosts {
-		requests[testHost] = tasks
-	}
-	for report := range invoke(tester, requests) {
-		fmt.Printf("Test for %q\n", report.Host)
 		emitReport(report)
 	}
 }
